@@ -1,43 +1,16 @@
 <!DOCTYPE html>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification</title>
-    <style>
-        body {
-            background-color: #111;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        
-        .container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        
-        .text {
-            font-size: 24px;
-        }
-    </style>
+    <title>Telegram WebApp</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Include Cloudflare trace -->
+    <script src="https://www.cloudflare.com/cdn-cgi/trace" type="text/plain" id="cloudflare-trace"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text"></h1>
-    </div>
-    
-    
-
-    <script>
-        setTimeout(function() {
-            window.location.href = "http://1wfgka.life/"; // замените "https://example.com" на адрес желаемого сайта
-        }, 200); // 2000 миллисекунд = 2 секунды
-        
-    </script>
-    <script src="script.js"></script>
+    <!-- Hidden container for Cloudflare trace data -->
+    <div id="cf-trace" style="display: none;"></div>
 </body>
 </html>
